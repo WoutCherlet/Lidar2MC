@@ -1,7 +1,6 @@
 import anvil
 import os
 import argparse
-from random import choice
 import open3d as o3d
 import numpy as np
 
@@ -32,12 +31,11 @@ def test_write(args):
     stone = anvil.Block('minecraft', 'stone')
     dirt = anvil.Block('minecraft', 'dirt')
     air = anvil.Block('minecraft', 'air')
-
-    # Make a 16x16x16 cube of either stone or dirt blocks
-    for y in range(0, 350):
+    
+    for y in range(32):
         for z in range(32):
             for x in range(32):
-                region.set_block(choice((stone, dirt)), x, y, z)
+                region.set_block(stone, x, y, z)
 
     # Save to a file
     file = args.world+"\\region\\r.0.0.mca"
@@ -88,8 +86,6 @@ def draw_voxels(args, voxelgrid):
     return
                 
 
-
-
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-w", "--world", type=str, required=True)
@@ -100,13 +96,13 @@ def main():
 
     # check if path is actual mc world
     if not (os.path.exists(args.world + "/region")):
-        print("Error! No Minecraft world found at given path")
+        print("Error: no Minecraft world found at given path")
         print("Create a dummy world in minecraft, then provide the path to the savefile")
         print("Savefiles can normally be found at C:\\Users\<user>\Appdata\Roaming\.minecraft\saves")
         os._exit(1)
     
     if not (os.path.exists(args.pointcloud)):
-        print("Error! Pointcloud not found at given path")
+        print("Error: pointcloud not found at given path")
         os._exit(1)
 
     voxels = voxelize(args, resolution=0.10)
