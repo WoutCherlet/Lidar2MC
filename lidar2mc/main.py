@@ -4,44 +4,11 @@ import argparse
 import open3d as o3d
 import numpy as np
 
-from utils import clear_chunk
+import time
+import utils
 
 MIN_Y = -64
 MAX_Y = 320
-
-def test_read(args):
-    file = args.world+"\\region\\r.0.0.mca"
-
-    region = anvil.Region.from_file(file)
-
-    chunk = anvil.Chunk.from_region(region, 0, 0)
-
-    block = chunk.get_block(0, 0, 0)
-
-    print(block) # <Block(minecraft:air)>
-    print(block.id) # air
-    print(block.properties) # {}
-    return 
-
-def test_write(args):
-    # Create a new region with the `EmptyRegion` class at 0, 0 (in region coords)
-    region = anvil.EmptyRegion(0, 0)
-
-    # Create `Block` objects that are used to set blocks
-    stone = anvil.Block('minecraft', 'stone')
-    dirt = anvil.Block('minecraft', 'dirt')
-    air = anvil.Block('minecraft', 'air')
-    
-    for y in range(32):
-        for z in range(32):
-            for x in range(32):
-                region.set_block(stone, x, y, z)
-
-    # Save to a file
-    file = args.world+"\\region\\r.0.0.mca"
-
-    region.save(file)
-    return
 
 def voxelize(args, resolution=1.0):
 
@@ -56,7 +23,6 @@ def voxelize(args, resolution=1.0):
 
     return voxelgrid
 
-
 def draw_voxels(args, voxelgrid):
 
     max_bounds = voxelgrid.get_max_bound()
@@ -65,16 +31,16 @@ def draw_voxels(args, voxelgrid):
 
     planks = anvil.Block('minecraft','oak_planks')
     
-    # TODO: support for multiple regions + generic coordinates
-    #clear area
-    # info: mapping of real world coordinates to mc: x -> x, y -> -z, z -> y
-    X_BUF = 16
-    Z_BUF = 16
-    for z in range(max_bounds[2]//16 + 2):
-        for x in range(int(max_bounds[0])//16 + 2):
-            clear_chunk(region, x, z)
+    # TODO: get region based on particular point cloud, so multiple plots can exist together
+    # TODO: give user option to define region in which to build
+
+    # clear region
+    region = utils.clear_region(0, 0)
             
     # draw voxelgrid with chunk buffer
+    X_BUF = 16
+    Z_BUF = 16
+    # info: mapping of real world coordinates to mc: x -> x, y -> -z, z -> y
     for voxel in voxelgrid.get_voxels():
         idx = voxel.grid_index
         region.set_block(planks, idx[0] + X_BUF, idx[2]-63, idx[1] + Z_BUF)
@@ -105,10 +71,11 @@ def main():
         print("Error: pointcloud not found at given path")
         os._exit(1)
 
+    print("Voxelizing pointcloud")
     voxels = voxelize(args, resolution=0.10)
-
+    
+    print("Drawing voxels in minecraft")
     draw_voxels(args, voxels)
-
     return
 
 if __name__ == "__main__":
