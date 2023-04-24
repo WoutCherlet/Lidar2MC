@@ -34,10 +34,9 @@ def clear_chunk(region, x, z, bedrock=True):
     return region
 
 
-
-def clear_region(x,z):
+def clear_region(x,z, bedrock=True):
     """
-    Returns Empty region
+    Returns region with all chunks turned into air with optional layer of bedrock below it
 
     Parameters
     ----------
@@ -51,7 +50,7 @@ def clear_region(x,z):
 
     for i in range(x*32+32):
         for j in range(z*32+32):
-            clear_chunk(region, i, j)
+            clear_chunk(region, i, j, bedrock=bedrock)
 
     return region
 
@@ -67,7 +66,7 @@ def get_region(x, z):
         Absolute z coordinate
     """
 
-    return (x // 512), (z // 12)
+    return (x // 512), (z // 512)
 
 def get_chunk(x, z):
     """
@@ -82,4 +81,11 @@ def get_chunk(x, z):
     """
     x_reg, z_reg = get_region(x,z)
 
-    return ((x-x_reg*512) // 16), ((z - z_reg) // 16)
+    return ((x-x_reg*512) // 16), ((z - z_reg*512) // 16)
+
+if __name__ == "__main__":
+    # quick tests
+    assert (get_chunk(-1,-1) == (31,31))
+    assert (get_chunk(1,1) == (0,0))
+    assert(get_chunk(32, 54) == (2,3))
+    assert(get_chunk(-512, -16) == (0,31))

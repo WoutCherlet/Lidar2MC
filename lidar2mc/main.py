@@ -25,14 +25,9 @@ def voxelize(args, resolution=1.0):
 
 def draw_voxels(args, voxelgrid):
 
-    max_bounds = voxelgrid.get_max_bound()
-
     region = anvil.EmptyRegion(0, 0)
 
     planks = anvil.Block('minecraft','oak_planks')
-    
-    # TODO: get region based on particular point cloud, so multiple plots can exist together
-    # TODO: give user option to define region in which to build
 
     # clear region
     region = utils.clear_region(0, 0)
@@ -49,8 +44,7 @@ def draw_voxels(args, voxelgrid):
     file = args.world+"\\region\\r.0.0.mca"
 
     region.save(file)
-    return
-                
+    return    
 
 def main():
     parser = argparse.ArgumentParser()
