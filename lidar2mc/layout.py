@@ -1,6 +1,7 @@
 import tkinter as tk
 from functools import partial
 import json
+from utils import get_region
 
 class PlotInfo:
     def __init__(self, name, x, z, x_length, z_length, description, type):
@@ -29,6 +30,10 @@ class ChunkFrame:
         self.cur_x = x
         self.cur_z = z
         # selected_x and selected_z keep track of location selected for new plot
+        self.selected_x = None
+        self.selected_z = None
+
+        self.calc_visible_regions()
 
     def read_data(self, chunk_data):
         self.data = chunk_data
@@ -53,8 +58,8 @@ class ChunkFrame:
                     for j in overlapx:
                         self.occupancy[i-self.cur_z][j-self.cur_x] = int(plot)+1
         return
-        
 
+    # TODO: render 
     def render(self):
         for i in range(self.gridsize):
             for j in range(self.gridsize):
@@ -89,14 +94,18 @@ class ChunkFrame:
                     self.buttons[i][j].config(bg="green")
                 else:
                     self.buttons[i][j].config(bg="white")
+        self.selected_x = x
+        self.selected_z = z
 
     def on_chunk_hover(self, e, i, j):
         if self.occupancy[i][j]:
             info = self.data[str(self.occupancy[i][j]-1)]
-            info_txt = f"x={j},z={i}, plot located here: {info['name']}, of type {info['type']}.\n Description: {info['description']}"
+            reg_x, reg_z = get_region(j+self.cur_x,i+self.cur_z, chunk=True)
+            info_txt = f"Reg {reg_x},{reg_z}, x={j+self.cur_x},z={i+self.cur_z}, plot located here: {info['name']}, of type {info['type']}.\n Description: {info['description']}"
             self.infolabel.config(text=info_txt, fg="black")
         else:
-            self.infolabel.config(text=f"x={j},z={i} \n ", fg="black")
+            reg_x, reg_z = get_region(j+self.cur_x,i+self.cur_z, chunk=True)
+            self.infolabel.config(text=f"Reg {reg_x},{reg_z}, x={j+self.cur_x},z={i+self.cur_z} \n ", fg="black")
     
     def move_grid(self, direction, steps):
         """
@@ -108,7 +117,19 @@ class ChunkFrame:
         ## Hard part: keep track of which regions are visible, and read new ones if necessary
         # Update occupancy grid
         # Update button colors
-        # Have to also keep track of which exact chunks are where somehow
+
+        # second option: redraw everything by destroying everything then calling render. Will probably need to do this if we want region borders. Can also use seperators but is messy because takes place in grid
+
+    def calc_visible_regions(self):
+        self.regions = []
+        x_checks = range(self.cur_x, self.cur_x+self.gridsize, min(self.gridsize-1, 32))
+        z_checks = range(self.cur_z, self.cur_z+self.gridsize, min(self.gridsize-1, 32))
+        for x in x_checks:
+            for z in z_checks:
+                reg = get_region(x, z, chunk=True)
+                if reg not in self.regions:
+                    self.regions.append(reg)
+
 
 def create_buttons(window):
     button_frame_N = tk.Frame(master=window, relief=tk.RAISED, borderwidth=1)
