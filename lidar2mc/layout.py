@@ -2,7 +2,7 @@ import tkinter as tk
 from functools import partial
 import json
 
-class OccupiedSpace:
+class PlotInfo:
     def __init__(self, name, x, z, x_length, z_length, description, type):
         self.name = name
         self.x = x
@@ -13,17 +13,22 @@ class OccupiedSpace:
         self.type = type
 
 
-class ChunkFrame():
-    def __init__(self, parent, infolabel, gridsize=32, x=0, z=0) -> None:
+class ChunkFrame:
+    def __init__(self, parent, new_plot: PlotInfo, infolabel, gridsize=32, x=0, z=0) -> None:
         self.parent = parent
+        self.new_plot = new_plot
         self.infolabel = infolabel
         self.gridsize = gridsize
-        self.pixel = tk.PhotoImage(width=10, height=10)
+        # holds data of other plots
         self.data = {}
+        # first index is z, second is x
         self.occupancy = [[0 for i in range(gridsize)] for j in range(gridsize)]
+        self.buttons = [[0 for i in range(gridsize)] for j in range(gridsize)]
+        self.pixel = tk.PhotoImage(width=10, height=10)
         # cur_x and cur_z keep track of current top left chunk coordinates
         self.cur_x = x
         self.cur_z = z
+        # selected_x and selected_z keep track of location selected for new plot
 
     def read_data(self, chunk_data):
         x_range_gr = range(self.cur_x, self.cur_x+self.gridsize)
@@ -43,9 +48,9 @@ class ChunkFrame():
             if overlapx is None or overlapz is None:
                 continue
             else:
-                for i in overlapx:
-                    for j in overlapz:
-                        self.occupancy[i-self.cur_x][j-self.cur_z] = 1
+                for i in overlapz:
+                    for j in overlapx:
+                        self.occupancy[i-self.cur_z][j-self.cur_x] = int(plot)+1
         return
         
 
@@ -53,21 +58,40 @@ class ChunkFrame():
         for i in range(self.gridsize):
             for j in range(self.gridsize):
                 frame = tk.Frame(master=self.parent, borderwidth=1)
-                frame.grid(row=i, column=j, padx=0,pady=0)
-                button = tk.Button(frame, image=self.pixel, width=15, height=15, bd=1, command=partial(self.btn_callback,i,j))
+                frame.grid(row=i, column=j, padx=0,pady=0) # row is z, column is x
+                button = tk.Button(frame, image=self.pixel, width=15, height=15, bd=1, command=partial(self.btn_callback,j,i))
                 if self.occupancy[i][j]:
                     button.config(bg="red")
-                button.bind("<Enter>", lambda event, arg=f"{i},{j}": self.change_label_txt(event, arg))
-                button.bind("<Leave>", lambda event, arg=f"": self.change_label_txt(event, arg))
+                else:
+                    button.config(bg="white")
+                button.bind("<Enter>", lambda event, i=i, j=j: self.on_chunk_hover(event, i, j))
+                button.bind("<Leave>", lambda event: self.infolabel.config(text="", fg="black"))
                 button.pack(fill="both")
+                self.buttons[i][j] = button
 
-    def btn_callback(self, i, j):
-        # TODO: render chunk here
-        print(f"Button on row {i} and column {j}")
+    def btn_callback(self, x, z):
+        # check if chunk fits in new location
+        z_range = range(z, min(z+self.new_plot.z_length, self.cur_z+self.gridsize))
+        x_range = range(x, min(x+self.new_plot.x_length, self.cur_x+self.gridsize))
+        for i in z_range:
+            for j in x_range:
+                if self.occupancy[i][j]:
+                    self.infolabel.config(text=f"Occupied space! (Collision at z= {i}, x={j})", fg="red")
+                    return
+        
+        # if fits: clear previous selection and draw new selection
+        for i in range(self.gridsize):
+            for j in range(self.gridsize):
+                if self.occupancy[i][j]:
+                    continue
+                elif i in z_range and j in x_range:
+                    self.buttons[i][j].config(bg="green")
+                else:
+                    self.buttons[i][j].config(bg="white")
 
-    def change_label_txt(self, e, txt):
+    def on_chunk_hover(self, e, i, j):
         # TODO: show info about plot in label here:
-        self.infolabel.config(text=txt)
+        self.infolabel.config(text=f"x={j},z={i}", fg="black")
     
     def move_grid(self, direction, steps):
         """
@@ -131,7 +155,7 @@ def create_buttons(window):
     btn_r.grid(row=2,column=0)
     button_frame_cont.pack(anchor="center", expand=True)
 
-def run_selector():
+def selector_window(new_plot : PlotInfo, occu_file : str):
     window = tk.Tk()
     window.title("Select location for new plot")
 
@@ -141,8 +165,8 @@ def run_selector():
 
     chunk_frame_container = tk.Frame(master=main_selector_container, relief=tk.RAISED, borderwidth=1)
     chunk_frame_container.grid(column=1, row=1)
-    chunk_frame = ChunkFrame(chunk_frame_container, infolabel=label)
-    with open("occupancy.json") as f:
+    chunk_frame = ChunkFrame(chunk_frame_container, new_plot=new_plot, infolabel=label)
+    with open(occu_file) as f:
         occupancy = json.load(f) 
     chunk_frame.read_data(occupancy)
     chunk_frame.render()
@@ -156,9 +180,10 @@ def run_selector():
 
 
 if __name__ == "__main__":
-    run_selector()
-    # occu = OccupiedSpace("testplot", 2, 2, 10, 15, "this is a test plot to test the software. ", "test type")
-    # occu2 = OccupiedSpace("testplot2", 15, 20, 10, 5, "a second test plot, non overlapping with the first one", "another test type")
+    new_plot = PlotInfo(name="newplottest", x=None, z=None, x_length=5, z_length=8,description="test of new plot", type="type of new plot")
+    selector_window(new_plot, "occupancy.json")
+    # occu = PlotInfo("testplot", 2, 2, 10, 15, "this is a test plot to test the software. ", "test type")
+    # occu2 = PlotInfo("testplot2", 15, 20, 10, 5, "a second test plot, non overlapping with the first one", "another test type")
     # dict = {0: occu.__dict__, 1: occu2.__dict__}
     # with open( "occupancy.json" , "w" ) as f:
     #     json.dump(dict, f)
