@@ -31,6 +31,7 @@ class ChunkFrame:
         # selected_x and selected_z keep track of location selected for new plot
 
     def read_data(self, chunk_data):
+        self.data = chunk_data
         x_range_gr = range(self.cur_x, self.cur_x+self.gridsize)
         z_range_gr = range(self.cur_z, self.cur_z+self.gridsize)
         for plot in chunk_data:
@@ -65,7 +66,7 @@ class ChunkFrame:
                 else:
                     button.config(bg="white")
                 button.bind("<Enter>", lambda event, i=i, j=j: self.on_chunk_hover(event, i, j))
-                button.bind("<Leave>", lambda event: self.infolabel.config(text="", fg="black"))
+                # button.bind("<Leave>", lambda event: self.infolabel.config(text="", fg="black"))
                 button.pack(fill="both")
                 self.buttons[i][j] = button
 
@@ -76,7 +77,7 @@ class ChunkFrame:
         for i in z_range:
             for j in x_range:
                 if self.occupancy[i][j]:
-                    self.infolabel.config(text=f"Occupied space! (Collision at z= {i}, x={j})", fg="red")
+                    self.infolabel.config(text=f"Occupied space! (Collision at z= {i}, x={j}) \n", fg="red")
                     return
         
         # if fits: clear previous selection and draw new selection
@@ -90,8 +91,12 @@ class ChunkFrame:
                     self.buttons[i][j].config(bg="white")
 
     def on_chunk_hover(self, e, i, j):
-        # TODO: show info about plot in label here:
-        self.infolabel.config(text=f"x={j},z={i}", fg="black")
+        if self.occupancy[i][j]:
+            info = self.data[str(self.occupancy[i][j]-1)]
+            info_txt = f"x={j},z={i}, plot located here: {info['name']}, of type {info['type']}.\n Description: {info['description']}"
+            self.infolabel.config(text=info_txt, fg="black")
+        else:
+            self.infolabel.config(text=f"x={j},z={i} \n ", fg="black")
     
     def move_grid(self, direction, steps):
         """
@@ -161,7 +166,7 @@ def selector_window(new_plot : PlotInfo, occu_file : str):
 
     main_selector_container = tk.Frame(master=window)
 
-    label = tk.Label(master=window,text = "")
+    label = tk.Label(master=window,text = " \n ")
 
     chunk_frame_container = tk.Frame(master=main_selector_container, relief=tk.RAISED, borderwidth=1)
     chunk_frame_container.grid(column=1, row=1)
