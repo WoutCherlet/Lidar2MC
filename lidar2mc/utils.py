@@ -10,12 +10,16 @@ def clear_chunk(region, x, z, bedrock=True):
     Parameters
     ----------
     region
-        region in which to clear chunk
+        region of chunk
     x
-        Region x
+        Chunk x
     z
-        Region z
+        Chunk z
     """
+    if not region.inside(x,0,z,chunk=True):
+        print("Attempting to clear chunk in region where it is not located")
+        return
+
     chunk = anvil.EmptyChunk(x, z)
     
     bedrock = anvil.Block('minecraft','bedrock')
@@ -32,7 +36,6 @@ def clear_chunk(region, x, z, bedrock=True):
         chunk.add_section(anvil.EmptySection(-4))
     region.add_chunk(chunk)
     return region
-
 
 def clear_region(x,z, bedrock=True):
     """
@@ -54,21 +57,25 @@ def clear_region(x,z, bedrock=True):
 
     return region
 
-def get_region(x, z):
+def get_region(x, z, chunk=False):
     """
     Returns x,z of region that coordinates fall in
 
     Parameters
     ----------
     x_coord
-        Absolute x coordinate
+        x coordinate
     z_coord
-        Absolute z coordinate
+        z coordinate
+    chunk
+        whether coordinates are chunk x,z or absolute x,z
     """
+    if chunk:
+        return (x // 32), (z // 32)
+    else:
+        return (x // 512), (z // 512)
 
-    return (x // 512), (z // 512)
-
-def get_chunk(x, z):
+def get_chunk_within_region(x, z):
     """
     Returns x,z of chunk that coordinates fall in
 
@@ -83,9 +90,22 @@ def get_chunk(x, z):
 
     return ((x-x_reg*512) // 16), ((z - z_reg*512) // 16)
 
+def get_chunk_absolute(x,z):
+    """
+    Returns x,z of chunk that coordinates fall in
+
+    Parameters
+    ----------
+    x_coord
+        Absolute x coordinate
+    z_coord
+        Absolute z coordinate
+    """
+    return x // 16, z // 16
+
 if __name__ == "__main__":
     # quick tests
-    assert (get_chunk(-1,-1) == (31,31))
-    assert (get_chunk(1,1) == (0,0))
-    assert(get_chunk(32, 54) == (2,3))
-    assert(get_chunk(-512, -16) == (0,31))
+    assert (get_chunk_within_region(-1,-1) == (31,31))
+    assert (get_chunk_within_region(1,1) == (0,0))
+    assert(get_chunk_within_region(32, 54) == (2,3))
+    assert(get_chunk_within_region(-512, -16) == (0,31))
