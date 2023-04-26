@@ -1,1 +1,20 @@
-{"0": {"name": "testplot", "x": 2, "z": 2, "x_length": 10, "z_length": 15, "description": "this is a test plot to test the software. ", "type": "test type"}, "1": {"name": "testplot2", "x": 15, "z": 20, "x_length": 10, "z_length": 5, "description": "a second test plot, non overlapping with the first one", "type": "another test type"}}
+{
+  "0": {
+    "name": "testplot",
+    "x": 2,
+    "z": 2,
+    "x_length": 10,
+    "z_length": 15,
+    "description": "this is a test plot to test the software. ",
+    "type": "test type"
+  },
+  "1": {
+    "name": "testplot2",
+    "x": 15,
+    "z": 20,
+    "x_length": 10,
+    "z_length": 5,
+    "description": "a second test plot, non overlapping with the first one",
+    "type": "another test type"
+  }
+}
