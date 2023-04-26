@@ -193,8 +193,12 @@ class ChunkFrame:
                     self.regions.append(reg)
 
     def clear_selection(self):
-        # TODO: implement clear selection function
+        self.selected_index_z = None
+        self.selected_index_x = None
+        self.redraw()
         return
+
+
 
 def create_buttons(window, chunk_frame):
     button_frame_N = tk.Frame(master=window, borderwidth=0)
@@ -246,6 +250,13 @@ def create_buttons(window, chunk_frame):
     btn_r.grid(row=2,column=0, pady=2)
     button_frame_cont.pack(anchor="center", expand=True)
 
+def quit_with_selection_check(window, chunk_frame, infolabel):
+    if not (chunk_frame.selected_index_x and chunk_frame.selected_index_z):
+        infolabel.config(text="Please make a selection first. \n", fg="red")
+        return
+    else:
+        window.quit()
+
 def selector_window(new_plot : PlotInfo, occu_file : str):
     window = tk.Tk()
     window.title("Select location for new plot")
@@ -265,8 +276,12 @@ def selector_window(new_plot : PlotInfo, occu_file : str):
 
     main_selector_container.pack()
     label.pack()
+    close_btn = tk.Button(master=window, text="Confirm", command = lambda w=window, cf=chunk_frame, l=label : quit_with_selection_check(w, cf, l))
+    close_btn.pack()
 
     window.mainloop()
+
+    return chunk_frame.cur_x + chunk_frame.selected_index_x, chunk_frame.cur_z + chunk_frame.selected_index_z
 
 
 if __name__ == "__main__":
