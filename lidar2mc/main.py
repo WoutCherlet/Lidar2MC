@@ -18,7 +18,7 @@ def voxelize(args, resolution=1.0):
     min_bounds = pc.get_min_bound()
     pc = pc.translate(np.negative(min_bounds-resolution/2))
 
-    # TODO: different voxelize method with min amount of points for voxel to be present?
+    # TODO: need some voxelisation method that selects most present label in each voxel
     voxelgrid = o3d.geometry.VoxelGrid.create_from_point_cloud(pc, voxel_size=resolution)
 
     return voxelgrid
@@ -50,6 +50,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-w", "--world", type=str, required=True)
     parser.add_argument("-p", "--pointcloud", type=str, required=True)
+    parser.add_argument("-o", "--occu_dir", type=str, required=True)
+    parser.add_argument("--save_voxels", )
 
     args = parser.parse_args()
 
@@ -57,13 +59,20 @@ def main():
     # check if path is actual mc world
     if not (os.path.exists(args.world + "/region")):
         print("Error: no Minecraft world found at given path")
-        print("Create a dummy world in minecraft, then provide the path to the savefile")
+        print("To start a new world, create it in minecraft first, then provide the path to the savefile")
         print("Savefiles can normally be found at C:\\Users\<user>\Appdata\Roaming\.minecraft\saves")
         os._exit(1)
     
     if not (os.path.exists(args.pointcloud)):
         print("Error: pointcloud not found at given path")
         os._exit(1)
+
+    if not (os.path.exists(args.occu_dir)):
+        print(f"Couldn't find directory at {args.occu_dir}, attempting mkdir")
+        try:
+            os.mkdir(args.occu_dir)
+        except:
+            print(f"Couldn't create {args.occu_dir}, ")
 
     print("Voxelizing pointcloud")
     voxels = voxelize(args, resolution=0.10)

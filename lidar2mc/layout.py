@@ -395,7 +395,6 @@ def create_selection_buttons(window, chunk_frame, label):
 
     return
 
-
 def selector_window(new_plot : PlotInfo, occu_file : str):
     window = tk.Tk()
     window.title("Select location for new plot")
@@ -407,8 +406,8 @@ def selector_window(new_plot : PlotInfo, occu_file : str):
     chunk_frame_container.grid(column=1, row=1)
     chunk_frame = ChunkFrame(chunk_frame_container, new_plot=new_plot, infolabel=label)
     with open(occu_file) as f:
-        occupancy = json.load(f) 
-    chunk_frame.read_data(occupancy)
+        lidar2mc_data = json.load(f)
+    chunk_frame.read_data(lidar2mc_data["plots"])
     chunk_frame.render()
 
     create_move_buttons(main_selector_container, chunk_frame)
@@ -427,9 +426,10 @@ def selector_window(new_plot : PlotInfo, occu_file : str):
 
 if __name__ == "__main__":
     new_plot = PlotInfo(name="newplottest", x=None, z=None, x_length=5, z_length=8,description="test of new plot", type="type of new plot")
-    selector_window(new_plot, "occupancy.json")
+    selector_window(new_plot, "lidar2mc.json")
     # occu = PlotInfo("testplot", 2, 2, 10, 15, "this is a test plot to test the software. ", "test type")
     # occu2 = PlotInfo("testplot2", 15, 20, 10, 5, "a second test plot, non overlapping with the first one", "another test type")
-    # dict = {0: occu.__dict__, 1: occu2.__dict__}
-    # with open( "occupancy.json" , "w" ) as f:
+    # plots_dict = {0: occu.__dict__, 1: occu2.__dict__}
+    # dict = {voxelsize: 0.02, plots: plots_dict}
+    # with open( "lidar2mc.json" , "w" ) as f:
     #     json.dump(dict, f)
