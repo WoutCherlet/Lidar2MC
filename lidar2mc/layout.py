@@ -1,6 +1,12 @@
-import tkinter as tk
 from functools import partial
 import json
+import os
+
+import tkinter as tk
+import tkinter.font as fnt
+from PIL import Image
+from PIL import ImageTk
+
 from utils import get_region
 
 class PlotInfo:
@@ -12,7 +18,13 @@ class PlotInfo:
         self.z_length = z_length
         self.description = description
         self.type = type
+        self.rotated = False
 
+    def rotate(self):
+        self.rotated = not self.rotated
+        tmp = self.x_length
+        self.x_length = self.z_length
+        self.z_length = tmp
 
 class ChunkFrame:
     def __init__(self, parent, new_plot: PlotInfo, infolabel, gridsize=32, x=0, z=0) -> None:
@@ -45,13 +57,13 @@ class ChunkFrame:
             for j in range(self.gridsize):
                 frame = tk.Frame(master=self.parent, borderwidth=1)
                 frame.grid(row=i, column=j, padx=0,pady=0) # row is z, column is x
-                button = tk.Button(frame, image=self.pixel, width=15, height=15, bd=0, command=partial(self.btn_callback,j,i))
+                button = tk.Button(frame, image=self.pixel, width=10, height=10, bd=0, command=partial(self.btn_callback,j,i))
                 if self.occupancy[i][j]:
                     button.config(bg="red")
                 else:
                     button.config(bg="white")
                 button.bind("<Enter>", lambda event, i=i, j=j: self.on_chunk_hover(event, i, j))
-                # button.bind("<Leave>", lambda event: self.infolabel.config(text="", fg="black"))
+                button.bind("<Leave>", lambda event, i=i, j=j: self.on_chunk_leave(event, i, j))
                 button.pack(fill="both")
                 self.buttons[i][j] = button
 
@@ -106,12 +118,41 @@ class ChunkFrame:
         if self.occupancy[i][j]:
             info = self.data[str(self.occupancy[i][j]-1)]
             reg_x, reg_z = get_region(j+self.cur_x,i+self.cur_z, chunk=True)
-            info_txt = f"Reg {reg_x},{reg_z}, x={j+self.cur_x},z={i+self.cur_z}, plot located here: {info['name']}, of type {info['type']}.\n Description: {info['description']}"
+            info_txt = f"Region ({reg_x},{reg_z}), x={j+self.cur_x},z={i+self.cur_z}, plot located here: {info['name']}, of type {info['type']}.\n Description: {info['description']}"
             self.infolabel.config(text=info_txt, fg="black")
         else:
             reg_x, reg_z = get_region(j+self.cur_x,i+self.cur_z, chunk=True)
-            self.infolabel.config(text=f"Reg {reg_x},{reg_z}, x={j+self.cur_x},z={i+self.cur_z} \n ", fg="black")
+            self.infolabel.config(text=f"Region ({reg_x},{reg_z}), x={j+self.cur_x},z={i+self.cur_z} \n ", fg="black")
+        
+        # show plot location on hover
+        if self.check_chunk_collisions(j, i):
+            color = "#f7a3a3"
+        else:
+            color = "#a3bfaa"
+        x_range = range(j, min(j+self.new_plot.x_length, self.gridsize))
+        z_range = range(i, min(i+self.new_plot.z_length, self.gridsize))
+        for k in x_range:
+            for l in z_range:
+                if not self.occupancy[l][k]:
+                    self.buttons[l][k].config(bg=color)
     
+    def on_chunk_leave(self, e, i, j):
+        self.infolabel.config(text="\n", fg="black")
+        if self.selected_index_x and self.selected_index_z:
+            selected_x_range = range(self.selected_index_x, self.selected_index_x+self.new_plot.x_length)
+            selected_z_range = range(self.selected_index_z, self.selected_index_z+self.new_plot.z_length)
+        else:
+            selected_x_range = range(0)
+            selected_z_range = range(0)
+        for z in range(i, min(i+new_plot.z_length, self.gridsize)):
+            for x in range(j, min(j+new_plot.x_length, self.gridsize)):
+                if self.occupancy[z][x]:
+                    continue
+                elif x in selected_x_range and z in selected_z_range:
+                    self.buttons[z][x].config(bg="green")
+                else:
+                    self.buttons[z][x].config(bg="white")
+
     def move_grid(self, direction, steps):
         """
         Move the grid in direction for n steps.
@@ -192,62 +233,20 @@ class ChunkFrame:
                 if reg not in self.regions:
                     self.regions.append(reg)
 
+    def rotate(self):
+        self.new_plot.rotate()
+        if self.selected_index_z and self.check_chunk_collisions(self.selected_index_x, self.selected_index_z):
+            self.infolabel.config(text="Rotated plot doesn't fit at this x,z. \n", fg="red")
+            self.new_plot.rotate()
+            return
+        if self.selected_index_z:
+            self.redraw()
+    
     def clear_selection(self):
         self.selected_index_z = None
         self.selected_index_x = None
         self.redraw()
         return
-
-
-def create_buttons(window, chunk_frame):
-    button_frame_N = tk.Frame(master=window, borderwidth=0)
-    button_frame_W = tk.Frame(master=window, borderwidth=0)
-    button_frame_E = tk.Frame(master=window, borderwidth=0)
-    button_frame_S = tk.Frame(master=window, borderwidth=0)
-    button_frame_N.grid(column=1,row=0, sticky="sew")
-    button_frame_W.grid(column=0,row=1, sticky="nsw")
-    button_frame_E.grid(column=2,row=1, sticky="nse")
-    button_frame_S.grid(column=1,row=2, sticky="new")
-    
-    # configure North buttons
-    button_frame_cont = tk.Frame(master=button_frame_N, pady=5)
-    btn_1 = tk.Button(master=button_frame_cont, text="^1", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="N", steps=1))
-    btn_1.grid(row=0,column=0, padx=2)
-    btn_5 = tk.Button(master=button_frame_cont, text="^5", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="N", steps=5))
-    btn_5.grid(row=0,column=1, padx=2)
-    btn_r = tk.Button(master=button_frame_cont, text="^R", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="N", steps=32))
-    btn_r.grid(row=0,column=2, padx=2)
-    button_frame_cont.pack(anchor="center")
-
-    # configure South buttons
-    button_frame_cont = tk.Frame(master=button_frame_S, pady=5)
-    btn_1 = tk.Button(master=button_frame_cont, text="v1", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="S", steps=1))
-    btn_1.grid(row=0,column=0, padx=2)
-    btn_5 = tk.Button(master=button_frame_cont, text="v5", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="S", steps=5))
-    btn_5.grid(row=0,column=1, padx=2)
-    btn_r = tk.Button(master=button_frame_cont, text="vR", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="S", steps=32))
-    btn_r.grid(row=0,column=2, padx=2)
-    button_frame_cont.pack(anchor="center")
-
-    # configure West buttons
-    button_frame_cont = tk.Frame(master=button_frame_W, padx=5)
-    btn_1 = tk.Button(master=button_frame_cont, text="<1", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="W", steps=1))
-    btn_1.grid(row=0,column=0, pady=2)
-    btn_5 = tk.Button(master=button_frame_cont, text="<5", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="W", steps=5))
-    btn_5.grid(row=1,column=0, pady=2)
-    btn_r = tk.Button(master=button_frame_cont, text="<R", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="W", steps=32))
-    btn_r.grid(row=2,column=0, pady=2)
-    button_frame_cont.pack(anchor="center", expand=True)
-
-    # configure East buttons
-    button_frame_cont = tk.Frame(master=button_frame_E, padx=5)
-    btn_1 = tk.Button(master=button_frame_cont, text=">1", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="E", steps=1))
-    btn_1.grid(row=0,column=0, pady=2)
-    btn_5 = tk.Button(master=button_frame_cont, text=">5", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="E", steps=5))
-    btn_5.grid(row=1,column=0, pady=2)
-    btn_r = tk.Button(master=button_frame_cont, text=">R", relief=tk.GROOVE, bg="white", command= lambda: chunk_frame.move_grid(direction="E", steps=32))
-    btn_r.grid(row=2,column=0, pady=2)
-    button_frame_cont.pack(anchor="center", expand=True)
 
 def quit_with_selection_check(window, chunk_frame, infolabel):
     if not (chunk_frame.selected_index_x and chunk_frame.selected_index_z):
@@ -256,38 +255,181 @@ def quit_with_selection_check(window, chunk_frame, infolabel):
     else:
         window.quit()
 
+def create_move_buttons(window, chunk_frame):
+    # get containers and place around chunk frame
+    button_frame_N = tk.Frame(master=window, borderwidth=0)
+    button_frame_W = tk.Frame(master=window, borderwidth=0)
+    button_frame_E = tk.Frame(master=window, borderwidth=0)
+    button_frame_S = tk.Frame(master=window, borderwidth=0)
+    button_frame_N.grid(column=1,row=0, sticky="sew")
+    button_frame_W.grid(column=0,row=1, sticky="nsw")
+    button_frame_E.grid(column=2,row=1, sticky="nse")
+    button_frame_S.grid(column=1,row=2, sticky="new")
+
+    # get imagee
+    image_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, "assets", "images")
+    btn_size = 26
+
+    # rotate and resize using pillow
+    imE1 = Image.open(os.path.join(image_dir, "E1.png"))
+    imE1 = imE1.resize((btn_size,btn_size), Image.LANCZOS)
+    imE5 = Image.open(os.path.join(image_dir, "E5.png"))
+    imE5 = imE5.resize((btn_size,btn_size), Image.LANCZOS)
+    imE32 = Image.open(os.path.join(image_dir, "E32.png"))
+    imE32 = imE32.resize((btn_size,btn_size), Image.LANCZOS)
+
+    # convert to tkinter image
+    imE1_tk =  ImageTk.PhotoImage(imE1)
+    imE5_tk =  ImageTk.PhotoImage(imE5)
+    imE32_tk =  ImageTk.PhotoImage(imE32)
+
+    imN1 = imE1.rotate(90)
+    imN1_tk = ImageTk.PhotoImage(imN1)
+    imN5 = imE5.rotate(90)
+    imN5_tk = ImageTk.PhotoImage(imN5)
+    imN32 = imE32.rotate(90)
+    imN32_tk = ImageTk.PhotoImage(imN32)
+
+    imW1 = imE1.rotate(180)
+    imW1_tk = ImageTk.PhotoImage(imW1)
+    imW5 = imE5.rotate(180)
+    imW5_tk = ImageTk.PhotoImage(imW5)
+    imW32 = imE32.rotate(180)
+    imW32_tk = ImageTk.PhotoImage(imW32)
+
+    imS1 = imE1.rotate(270)
+    imS1_tk = ImageTk.PhotoImage(imS1)
+    imS5 = imE5.rotate(270)
+    imS5_tk = ImageTk.PhotoImage(imS5)
+    imS32 = imE32.rotate(270)
+    imS32_tk = ImageTk.PhotoImage(imS32)
+
+    
+    # configure North buttons
+    button_frame_cont = tk.Frame(master=button_frame_N, pady=5)
+    btn_1 = tk.Button(master=button_frame_cont, image=imN1_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="N", steps=1))
+    btn_1.img=imN1_tk
+    btn_1.grid(row=0,column=0, padx=2)
+    btn_5 = tk.Button(master=button_frame_cont, image=imN5_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="N", steps=5))
+    btn_5.img=imN5_tk
+    btn_5.grid(row=0,column=1, padx=2)
+    btn_r = tk.Button(master=button_frame_cont, image=imN32_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="N", steps=32))
+    btn_r.img=imN32_tk
+    btn_r.grid(row=0,column=2, padx=2)
+    button_frame_cont.pack(anchor="center")
+
+    # configure South buttons
+    button_frame_cont = tk.Frame(master=button_frame_S, pady=5)
+    btn_1 = tk.Button(master=button_frame_cont, image=imS1_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="S", steps=1))
+    btn_1.img=imS1_tk
+    btn_1.grid(row=0,column=0, padx=2)
+    btn_5 = tk.Button(master=button_frame_cont, image=imS5_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="S", steps=5))
+    btn_5.img=imS5_tk
+    btn_5.grid(row=0,column=1, padx=2)
+    btn_r = tk.Button(master=button_frame_cont, image=imS32_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="S", steps=32))
+    btn_r.img=imS32_tk
+    btn_r.grid(row=0,column=2, padx=2)
+    button_frame_cont.pack(anchor="center")
+
+    # configure West buttons
+    button_frame_cont = tk.Frame(master=button_frame_W, padx=5)
+    btn_1 = tk.Button(master=button_frame_cont, image=imW1_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="W", steps=1))
+    btn_1.img = imW1_tk
+    btn_1.grid(row=0,column=0, pady=2)
+    btn_5 = tk.Button(master=button_frame_cont, image=imW5_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="W", steps=5))
+    btn_5.img = imW5_tk
+    btn_5.grid(row=1,column=0, pady=2)
+    btn_r = tk.Button(master=button_frame_cont, image=imW32_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="W", steps=32))
+    btn_r.img = imW32_tk
+    btn_r.grid(row=2,column=0, pady=2)
+    button_frame_cont.pack(anchor="center", expand=True)
+
+    # configure East buttons
+    button_frame_cont = tk.Frame(master=button_frame_E, padx=5)
+    btn_1 = tk.Button(master=button_frame_cont, image=imE1_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="E", steps=1))
+    btn_1.img = imE1_tk
+    btn_1.grid(row=0,column=0, pady=2)
+    btn_5 = tk.Button(master=button_frame_cont, image=imE5_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="E", steps=5))
+    btn_5.img = imE5_tk
+    btn_5.grid(row=1,column=0, pady=2)
+    btn_r = tk.Button(master=button_frame_cont, image=imE32_tk, relief=tk.SOLID, borderwidth=1, bg="white", command= lambda: chunk_frame.move_grid(direction="E", steps=32))
+    btn_r.img = imE32_tk
+    btn_r.grid(row=2,column=0, pady=2)
+    button_frame_cont.pack(anchor="center", expand=True)
+
+    return
+
+def create_selection_buttons(window, chunk_frame, label):
+    # container
+    btn_frame = tk.Frame(master=window, borderwidth=0)
+
+    # image config
+    image_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir, "assets", "images")
+    icon_size = 20
+
+    # clear button
+    imClear = Image.open(os.path.join(image_dir, "clear.png"))
+    imClear = imClear.resize((icon_size,icon_size), Image.LANCZOS)
+    imClear =  ImageTk.PhotoImage(imClear)
+    clear_btn = tk.Button(master=btn_frame, font = fnt.Font(size = 12), image=imClear, text=" Clear", compound=tk.LEFT, relief=tk.SOLID, bg="white", borderwidth=1, command = lambda cf=chunk_frame : cf.clear_selection())
+    clear_btn.img = imClear
+    clear_btn.grid(row=0, column=0, padx=5, ipadx=5)
+
+    # rotation button
+    imRot = Image.open(os.path.join(image_dir, "rotate.png"))
+    imRot = imRot.resize((icon_size-2,icon_size-2), Image.LANCZOS)
+    imRot =  ImageTk.PhotoImage(imRot)
+    rot_btn = tk.Button(master=btn_frame, font = fnt.Font(size = 12), image=imRot, text=" Rotate", compound=tk.LEFT, relief=tk.SOLID, bg="white", borderwidth=1, command= lambda cf=chunk_frame : cf.rotate())
+    rot_btn.img = imRot
+    rot_btn.grid(row=0, column=1, padx=5, ipadx=5)
+
+    # confirm button
+    imConfirm = Image.open(os.path.join(image_dir, "confirm.png"))
+    imConfirm = imConfirm.resize((icon_size,icon_size), Image.LANCZOS)
+    imConfirm =  ImageTk.PhotoImage(imConfirm)
+    confirm_btn = tk.Button(master=btn_frame, font = fnt.Font(size = 12), image=imConfirm, text=" Confirm", compound=tk.LEFT, relief=tk.SOLID, bg="white", borderwidth=1, command = lambda w=window, cf=chunk_frame, l=label : quit_with_selection_check(w, cf, l))
+    confirm_btn.img = imConfirm
+    confirm_btn.grid(row=0, column=2, padx=5, ipadx=5)
+
+    btn_frame.pack(anchor="center", pady=(5,10))
+
+    return
+
 def selector_window(new_plot : PlotInfo, occu_file : str):
     window = tk.Tk()
     window.title("Select location for new plot")
 
     main_selector_container = tk.Frame(master=window)
 
-    label = tk.Label(master=window,text = " \n ")
-    chunk_frame_container = tk.Frame(master=main_selector_container, relief=tk.GROOVE, borderwidth=3)
+    label = tk.Label(master=window,text = " \n ", font = fnt.Font(size = 10))
+    chunk_frame_container = tk.Frame(master=main_selector_container, relief=tk.SOLID, borderwidth=1)
     chunk_frame_container.grid(column=1, row=1)
     chunk_frame = ChunkFrame(chunk_frame_container, new_plot=new_plot, infolabel=label)
     with open(occu_file) as f:
-        occupancy = json.load(f) 
-    chunk_frame.read_data(occupancy)
+        lidar2mc_data = json.load(f)
+    chunk_frame.read_data(lidar2mc_data["plots"])
     chunk_frame.render()
 
-    create_buttons(main_selector_container, chunk_frame)
+    create_move_buttons(main_selector_container, chunk_frame)
 
     main_selector_container.pack()
     label.pack()
-    close_btn = tk.Button(master=window, text="Confirm", command = lambda w=window, cf=chunk_frame, l=label : quit_with_selection_check(w, cf, l))
-    close_btn.pack()
+
+    create_selection_buttons(window, chunk_frame, label)
 
     window.mainloop()
+
+    print(f"Selected location: x: {chunk_frame.cur_x + chunk_frame.selected_index_x}, z: {chunk_frame.cur_z+chunk_frame.selected_index_z}")
 
     return chunk_frame.cur_x + chunk_frame.selected_index_x, chunk_frame.cur_z + chunk_frame.selected_index_z
 
 
 if __name__ == "__main__":
     new_plot = PlotInfo(name="newplottest", x=None, z=None, x_length=5, z_length=8,description="test of new plot", type="type of new plot")
-    selector_window(new_plot, "occupancy.json")
+    selector_window(new_plot, "lidar2mc.json")
     # occu = PlotInfo("testplot", 2, 2, 10, 15, "this is a test plot to test the software. ", "test type")
     # occu2 = PlotInfo("testplot2", 15, 20, 10, 5, "a second test plot, non overlapping with the first one", "another test type")
-    # dict = {0: occu.__dict__, 1: occu2.__dict__}
-    # with open( "occupancy.json" , "w" ) as f:
+    # plots_dict = {0: occu.__dict__, 1: occu2.__dict__}
+    # dict = {voxelsize: 0.02, plots: plots_dict}
+    # with open( "lidar2mc.json" , "w" ) as f:
     #     json.dump(dict, f)
