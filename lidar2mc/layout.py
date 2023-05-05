@@ -199,7 +199,6 @@ class ChunkFrame:
         return
 
 
-
 def create_buttons(window, chunk_frame):
     button_frame_N = tk.Frame(master=window, borderwidth=0)
     button_frame_W = tk.Frame(master=window, borderwidth=0)
