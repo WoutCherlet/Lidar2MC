@@ -18,7 +18,7 @@ def voxelize(args, resolution=1.0):
     min_bounds = pc.get_min_bound()
     pc = pc.translate(np.negative(min_bounds-resolution/2))
 
-    # TODO: need some voxelisation method that selects most present label in each voxel
+    # TODO: switch to custom voxelisation
     voxelgrid = o3d.geometry.VoxelGrid.create_from_point_cloud(pc, voxel_size=resolution)
 
     return voxelgrid
@@ -51,7 +51,8 @@ def main():
     parser.add_argument("-w", "--world", type=str, required=True)
     parser.add_argument("-p", "--pointcloud", type=str, required=True)
     parser.add_argument("-o", "--occu_dir", type=str, required=True)
-    parser.add_argument("--save_voxels", )
+    parser.add_argument("--save_voxels")
+    # TODO: read in forest type
 
     args = parser.parse_args()
 

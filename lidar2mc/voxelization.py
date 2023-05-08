@@ -25,7 +25,6 @@ class VoxelNode:
         return None
 
 
-
 class VoxelGrid:
     def __init__(self, pointcloud : o3d.t.geometry.PointCloud, resolution, min_points_per_voxel=1) -> None:
         self.min_points = min_points_per_voxel
