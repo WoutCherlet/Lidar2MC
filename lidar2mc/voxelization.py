@@ -4,6 +4,9 @@ import numpy as np
 import open3d as o3d
 import matplotlib.pyplot as plt
 
+from simple_3dviz import Mesh, Lines
+from simple_3dviz.window import show
+
 
 class VoxelNode:
     def __init__(self, grid_index) -> None:
@@ -28,6 +31,8 @@ class VoxelNode:
 class VoxelGrid:
     def __init__(self, pointcloud : o3d.t.geometry.PointCloud, resolution, min_points_per_voxel=1) -> None:
         self.min_points = min_points_per_voxel
+        self.resolution = resolution
+        self.pointcloud = pointcloud
 
         pts_np = pointcloud.point.positions.numpy()
         try:
@@ -87,6 +92,28 @@ class VoxelGrid:
         ax.set_aspect('equal')
 
         plt.show()
+    
+    def show(self):
+        min_bounds = self.pointcloud.get_min_bound().numpy()/10
+        max_bounds = self.pointcloud.get_max_bound().numpy()/10
+
+        if self.labels_present:
+            colors = np.empty(self.voxel_array.shape + (3,), dtype=object)
+            colormap = {1: (0.6, 0.3, 0), 0: (0, 1, 0)}
+            for index in np.ndindex(self.voxel_array.shape):
+                if self.voxel_array[index]:
+                    label = self.voxel_array[index].get_voxel_label()
+                    if label is not None:
+                        colors[index] = colormap[label]
+        else:
+            colors = (1, 0, 0)
+
+
+        boolean_voxels = self.voxel_array != None
+
+        m = Mesh.from_voxel_grid(voxels=boolean_voxels, colors=colors, bbox=[[0,0,0], max_bounds-min_bounds], sizes = [self.resolution/10, self.resolution/10, self.resolution/10])
+        show(m)
+
 
 def read_txt_file(path):
     points = []
@@ -111,7 +138,7 @@ def read_txt_file(path):
 def test_voxels(pc):
     vxlgrid = VoxelGrid(pc, resolution=0.5, min_points_per_voxel=50)
 
-    vxlgrid.plot()
+    vxlgrid.show()
 
 if __name__ == "__main__":
     # text file with labels
