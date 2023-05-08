@@ -41,9 +41,8 @@ class VoxelGrid:
 
         self.voxel_array = np.array([[[None for _ in range(int(self.n_bins[2]))] for _ in range(int(self.n_bins[1]))] for _ in range(int(self.n_bins[0]))])
 
-        # TODO: smarter way to do this: first do count, some map reduce type structure
+        # TODO: parallelize with numpy ? smarter way to do this: first do count, some map reduce type structure?
 
-        # TODO: parallelize with numpy ? 
         for point in pts_np:
             idxs = (point - min_bounds) // resolution
             idxs = tuple(idxs.astype(int))
@@ -52,11 +51,9 @@ class VoxelGrid:
                 self.voxel_array[idxs] = VoxelNode(idxs)
             self.voxel_array[idxs].add_point(point)
 
-        # TODO: fix numpy delete function on indices
-        for voxelnode in self.voxel_array.flatten():
-            if voxelnode is not None:
-                if voxelnode.n_points < self.min_points:
-                    self.voxel_array.remove(voxelnode)
+        for index in np.ndindex(self.voxel_array.shape):
+            if self.voxel_array[index] and self.voxel_array[index].n_points < self.min_points:
+                self.voxel_array[index] = None
 
     def get_voxels(self):
         # create list of only occupied voxel
@@ -66,7 +63,6 @@ class VoxelGrid:
         # plot using matplotlib
 
         boolean_voxels = self.voxel_array != None
-        
         
         ax = plt.figure().add_subplot(projection='3d')
         ax.voxels(boolean_voxels, edgecolor='k')
@@ -78,7 +74,7 @@ class VoxelGrid:
 def test_voxels(path):
     pc = o3d.t.io.read_point_cloud(path)
 
-    vxlgrid = VoxelGrid(pc, resolution=0.5, min_points_per_voxel=1)
+    vxlgrid = VoxelGrid(pc, resolution=0.5, min_points_per_voxel=100)
 
     vxlgrid.plot()
 
