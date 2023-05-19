@@ -416,6 +416,7 @@ def selector_window(new_plot : PlotInfo, occu_file : str):
     label.pack()
 
     create_selection_buttons(window, chunk_frame, label)
+    # TODO: read in forest type
 
     window.mainloop()
 

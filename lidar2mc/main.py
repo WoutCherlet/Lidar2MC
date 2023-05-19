@@ -1,11 +1,12 @@
 import anvil
 import os
 import argparse
+import time
+import utils
+
 import open3d as o3d
 import numpy as np
 
-import time
-import utils
 
 MIN_Y = -64
 MAX_Y = 320
@@ -50,9 +51,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-w", "--world", type=str, required=True)
     parser.add_argument("-p", "--pointcloud", type=str, required=True)
-    parser.add_argument("-o", "--occu_dir", type=str, required=True)
-    parser.add_argument("--save_voxels")
-    # TODO: read in forest type
+    parser.add_argument("-o", "--occupation_file", type=str, required=True)
+    parser.add_argument("-r", "--resolution", type=float, default=None)
 
     args = parser.parse_args()
 
@@ -68,15 +68,14 @@ def main():
         print("Error: pointcloud not found at given path")
         os._exit(1)
 
-    if not (os.path.exists(args.occu_dir)):
-        print(f"Couldn't find directory at {args.occu_dir}, attempting mkdir")
-        try:
-            os.mkdir(args.occu_dir)
-        except:
-            print(f"Couldn't create {args.occu_dir}, ")
+    if not (os.path.exists(args.occupation_file)):
+        print(f"Couldn't find occupation file at {args.occupation_file}, quitting")
+        print(f"Create new occupation file?")
+        # TODO: read in new occu file name with resolution etc.
+        return
 
     print("Voxelizing pointcloud")
-    voxels = voxelize(args, resolution=0.10)
+    voxels = voxelize(args, resolution=args.resolution)
     
     print("Drawing voxels in minecraft")
     draw_voxels(args, voxels)
