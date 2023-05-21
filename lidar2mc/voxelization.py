@@ -27,7 +27,6 @@ class VoxelNode:
             return Counter(self.labels).most_common(1)[0][0]
         return None
 
-
 class VoxelGrid:
     def __init__(self, pointcloud : o3d.t.geometry.PointCloud, resolution, min_points_per_voxel=1) -> None:
         self.min_points = min_points_per_voxel
@@ -47,10 +46,10 @@ class VoxelGrid:
         max_bounds = pointcloud.get_max_bound().numpy()
         min_bounds = pointcloud.get_min_bound().numpy()
         ranges = max_bounds - min_bounds
-        self.n_bins = ranges//resolution + 1
+        self.n_voxels = ranges//resolution + 1
         
         # init voxelgrid array
-        self.voxel_array = np.array([[[None for _ in range(int(self.n_bins[2]))] for _ in range(int(self.n_bins[1]))] for _ in range(int(self.n_bins[0]))])
+        self.voxel_array = np.array([[[None for _ in range(int(self.n_voxels[2]))] for _ in range(int(self.n_voxels[1]))] for _ in range(int(self.n_voxels[0]))])
 
         for i, point in enumerate(pts_np):
             idxs = (point - min_bounds) // resolution
@@ -69,6 +68,9 @@ class VoxelGrid:
 
     def get_voxels(self):
         return self.voxel_array[self.voxel_array != np.array(None)]
+    
+    def get_dimensions(self):
+        return self.n_voxels
 
     def plot(self):
         # plot using matplotlib
@@ -142,12 +144,10 @@ def test_voxels(pc):
 
 if __name__ == "__main__":
     # text file with labels
-    test_path = r"C:\Users\wcherlet\OneDrive - UGent\data\singletrees\separated\dro_033_pc.txt"
+    test_path = r"C:\Users\wcherlet\OneDrive - UGent\data\singletrees\separated\dro_034_pc.txt"
     pc = read_txt_file(test_path)
 
     # ply file
     # test_path = r"C:\Users\wcherlet\OneDrive - UGent\data\singletrees\wytham_winter_5a.ply"
     # pc = o3d.t.io.read_point_cloud(test_path)
-
-
     test_voxels(pc)

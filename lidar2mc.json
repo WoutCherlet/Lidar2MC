@@ -1,5 +1,5 @@
 {
-  "recommended_voxelsize": 0.02,
+  "voxelsize": 0.02,
   "plots": {
     "0": {
       "name": "testplot",

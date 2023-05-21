@@ -1,7 +1,7 @@
 import anvil
 import os
 import argparse
-import time
+
 import utils
 
 import open3d as o3d

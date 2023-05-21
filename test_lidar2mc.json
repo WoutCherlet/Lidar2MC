@@ -1,0 +1,15 @@
+{
+  "voxelsize": 0.5,
+  "plots": {
+    "0": {
+      "name": "base_plot",
+      "x": 0,
+      "z": 0,
+      "x_length": 32,
+      "z_length": 32,
+      "description": "Base are from where to teleport to actual plots",
+      "type": "no type",
+      "rotated": false
+    }
+  }
+}

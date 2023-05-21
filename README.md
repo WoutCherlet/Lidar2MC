@@ -16,3 +16,6 @@ Tested using Minecraft 1.19 and using .ply files.
 
 - Use FSCT or some other tool to get leaf-wood-ground seperation and use appropriate mc blocks.
 - Give certain forest type for new plots, and use appropriate mc wood type (and biome!)
+
+#### anvil-parser
+- x and z detection from file seems broken

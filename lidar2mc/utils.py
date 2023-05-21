@@ -1,7 +1,25 @@
 import anvil
+import os
 
 MIN_Y = -64
 MAX_Y = 320
+
+class PlotInfo:
+    def __init__(self, name, x, z, x_length, z_length, description, type):
+        self.name = name
+        self.x = x
+        self.z = z
+        self.x_length = x_length
+        self.z_length = z_length
+        self.description = description
+        self.type = type
+        self.rotated = False
+
+    def rotate(self):
+        self.rotated = not self.rotated
+        tmp = self.x_length
+        self.x_length = self.z_length
+        self.z_length = tmp
 
 def clear_chunk(region, x, z, bedrock=True):
     """
@@ -102,6 +120,48 @@ def get_chunk_absolute(x,z):
         Absolute z coordinate
     """
     return x // 16, z // 16
+
+def flatten_chunk(region,x,z):
+    """
+        Clears chunk into all air with optional bottom layer of bedrock
+
+        Parameters
+        ----------
+        region
+            region of chunk
+        x
+            Chunk x
+        z
+            Chunk z
+    """
+    if not region.inside(x,0,z,chunk=True):
+        print("Attempting to clear chunk in region where it is not located")
+        return
+
+    chunk = region.get_chunk(x, z)
+
+    for y in range(0, 20):
+        chunk.add_section(anvil.EmptySection(y), replace = True) # will init empty section as None blocks which is same as air
+
+    dirt = anvil.Block('minecraft', 'dirt')
+    for i in range(16):
+        for j in range(16):
+            chunk.set_block(dirt, i, -1, j)
+    return region
+
+def flatten_region(world_dir, x,z):
+    regionfile = f"r.{x}.{z}.mca"
+
+    regionfile = os.path.join(world_dir, "region", regionfile)
+
+    region = anvil.Region.from_file(regionfile)
+
+    for i in range(x*32+32):
+        for j in range(z*32+32):
+            flatten_chunk(region, i, j)
+    
+    return region
+
 
 if __name__ == "__main__":
     # quick tests
