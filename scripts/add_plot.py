@@ -3,9 +3,9 @@ import argparse
 import json
 
 import sys
-sys.path.insert(1, r'C:\Users\wcherlet\OneDrive - UGent\Documents\Lidar2MC')
+sys.path.insert(1, r'C:\Users\wcherlet\Documents\Lidar2MC')
 
-from lidar2mc.main import construct_plot
+from lidar2mc.layout import init_layout
 
 
 def main():
@@ -42,8 +42,6 @@ def main():
         data = json.load(f)
 
     resolution = data["voxelsize"]
-
-    construct_plot(args, resolution)
 
 
 

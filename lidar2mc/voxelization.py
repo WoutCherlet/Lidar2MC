@@ -1,9 +1,7 @@
-from collections import Counter
-
 import numpy as np
 import open3d as o3d
 import matplotlib.pyplot as plt
-
+from collections import Counter
 from simple_3dviz import Mesh, Lines
 from simple_3dviz.window import show
 
@@ -115,8 +113,10 @@ class VoxelGrid:
 
         boolean_voxels = self.voxel_array != None
 
-        m = Mesh.from_voxel_grid(voxels=boolean_voxels, colors=colors, bbox=[[0,0,0], max_bounds-min_bounds], sizes = [self.resolution/10, self.resolution/10, self.resolution/10])
-        show(m)
+        # m = Mesh.from_voxel_grid(voxels=boolean_voxels, colors=colors, bbox=[[0,0,0], max_bounds-min_bounds], sizes = [self.resolution/10, self.resolution/10, self.resolution/10])
+        m = Mesh.from_voxel_grid(voxels=boolean_voxels, colors=colors)
+        l = Lines.from_voxel_grid(voxels=boolean_voxels, colors=(0, 0, 0.), width=0.01)
+        show([m,l])
 
 
 
@@ -128,7 +128,7 @@ def test_voxels(pc):
 
 if __name__ == "__main__":
     # text file with labels
-    test_path = r"C:\Users\wcherlet\OneDrive - UGent\data\singletrees\separated\dro_034_pc.txt"
+    test_path = r"C:\Users\cherl\OneDrive - UGent\data\singletrees\separated\dro_034_pc.txt"
     pc = read_txt_file(test_path)
 
     # ply file

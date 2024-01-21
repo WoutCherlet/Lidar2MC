@@ -4,23 +4,6 @@ import os
 MIN_Y = -64
 MAX_Y = 320
 
-class PlotInfo:
-    def __init__(self, name, x, z, x_length, z_length, description, type):
-        self.name = name
-        self.x = x
-        self.z = z
-        self.x_length = x_length
-        self.z_length = z_length
-        self.description = description
-        self.type = type
-        self.rotated = False
-
-    def rotate(self):
-        self.rotated = not self.rotated
-        tmp = self.x_length
-        self.x_length = self.z_length
-        self.z_length = tmp
-
 def clear_chunk(region, x, z, bedrock=True):
     """
     Clears chunk into all air with optional bottom layer of bedrock

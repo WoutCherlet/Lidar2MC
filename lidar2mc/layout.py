@@ -7,7 +7,24 @@ import tkinter.font as fnt
 from PIL import Image
 from PIL import ImageTk
 
-from lidar2mc.world_io import get_region, PlotInfo
+from world_io import get_region
+
+class PlotInfo:
+    def __init__(self, name, x, z, x_length, z_length, description, type):
+        self.name = name
+        self.x = x
+        self.z = z
+        self.x_length = x_length
+        self.z_length = z_length
+        self.description = description
+        self.type = type
+        self.rotated = False
+
+    def rotate(self):
+        self.rotated = not self.rotated
+        tmp = self.x_length
+        self.x_length = self.z_length
+        self.z_length = tmp
 
 class ChunkFrame:
     def __init__(self, parent, new_plot: PlotInfo, infolabel, gridsize=32, x=0, z=0) -> None:
@@ -405,6 +422,19 @@ def selector_window(new_plot : PlotInfo, plots):
     print(f"Selected location: x: {chunk_frame.cur_x + chunk_frame.selected_index_x}, z: {chunk_frame.cur_z+chunk_frame.selected_index_z}")
 
     return chunk_frame.cur_x + chunk_frame.selected_index_x, chunk_frame.cur_z + chunk_frame.selected_index_z
+
+
+def init_layout():
+    # TODO: this is entry point for layout selector:
+
+    # input : the voxelized pointcloud (or pc dimensions, whichever is most logical) + worldinfo file
+    # 1. construct plotInfo object
+    # 2. load json with world info
+    # 3. create selector_window with existing plots -> function
+    # 4. save new plot_info with description and write json
+    # 5. output: selected location
+    pass
+
 
 
 if __name__ == "__main__":
