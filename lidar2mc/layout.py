@@ -7,7 +7,7 @@ import tkinter.font as fnt
 from PIL import Image
 from PIL import ImageTk
 
-from utils import get_region, PlotInfo
+from lidar2mc.world_io import get_region, PlotInfo
 
 class ChunkFrame:
     def __init__(self, parent, new_plot: PlotInfo, infolabel, gridsize=32, x=0, z=0) -> None:

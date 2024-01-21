@@ -2,7 +2,7 @@ import anvil
 import os
 import argparse
 
-import utils
+import lidar2mc.world_io as world_io
 
 import open3d as o3d
 import numpy as np
@@ -10,6 +10,11 @@ import numpy as np
 
 MIN_Y = -64
 MAX_Y = 320
+
+def construct_plot(args, resolution):
+    # TODO: voxelize and get plot info
+
+    pass
 
 def voxelize(args, resolution=1.0):
 
@@ -31,7 +36,7 @@ def draw_voxels(args, voxelgrid):
     planks = anvil.Block('minecraft','oak_planks')
 
     # clear region
-    region = utils.clear_region(0, 0)
+    region = world_io.clear_region(0, 0)
             
     # draw voxelgrid with chunk buffer
     X_BUF = 16

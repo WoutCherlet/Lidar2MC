@@ -2,11 +2,16 @@ import os
 import argparse
 import json
 
+import sys
+sys.path.insert(1, r'C:\Users\wcherlet\OneDrive - UGent\Documents\Lidar2MC')
+
+from lidar2mc.main import construct_plot
+
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("-w", "--world", type=str, required=True)
-    parser.add_argument("-", "--world_info", type=str, required=True)
+    parser.add_argument("-i", "--world_info", type=str, required=True)
     parser.add_argument("-p", "--pointcloud", type=str, required=True)
 
     args = parser.parse_args()
@@ -29,7 +34,6 @@ def main():
     # steps to add new plot:
 
     # read in point cloud
-    # read in resolution from world_info file
     # voxelize point cloud and create plotinfo
     # init selector window
     # get location and render in minecraft.
@@ -37,8 +41,12 @@ def main():
     with open(args.world_info) as f:
         data = json.load(f)
 
-    resolution = data["resolution"]
-    print(resolution)
+    resolution = data["voxelsize"]
+
+    construct_plot(args, resolution)
+
+
+
 
     return
 

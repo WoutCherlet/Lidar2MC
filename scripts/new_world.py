@@ -5,7 +5,7 @@ import json
 import sys
 sys.path.insert(1, r'C:\Users\wcherlet\OneDrive - UGent\Documents\Lidar2MC')
 
-from lidar2mc.utils import flatten_region, PlotInfo
+from lidar2mc.world_io import flatten_region, PlotInfo
 
 def main():
     parser = argparse.ArgumentParser()

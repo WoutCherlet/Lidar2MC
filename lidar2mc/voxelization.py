@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 from simple_3dviz import Mesh, Lines
 from simple_3dviz.window import show
 
+from pc_io import read_txt_file
+
 
 class VoxelNode:
     def __init__(self, grid_index) -> None:
@@ -35,7 +37,7 @@ class VoxelGrid:
 
         pts_np = pointcloud.point.positions.numpy()
         try:
-            labels = pointcloud.point.labels.numpy()
+            labels = pointcloud.point.semantic.numpy()
             self.labels_present = True
         except:
             print("No labels found")
@@ -117,24 +119,6 @@ class VoxelGrid:
         show(m)
 
 
-def read_txt_file(path):
-    points = []
-    labels = []
-    with open(path, 'r') as f:
-        for line in f.readlines():
-            els = line.split(' ')
-            points.append([float(els[0]), float(els[1]), float(els[2])])
-            labels.append(int(float(els[3].replace("\n", ""))))
-    
-    device = o3d.core.Device("CPU:0")
-
-    pcd = o3d.t.geometry.PointCloud(device)
-
-    pcd.point.positions = o3d.core.Tensor(points, o3d.core.float32, device)
-
-    pcd.point.labels = o3d.core.Tensor(labels, o3d.core.int32, device)
-
-    return pcd
 
 
 def test_voxels(pc):
