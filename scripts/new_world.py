@@ -3,9 +3,10 @@ import argparse
 import json
 
 import sys
-sys.path.insert(1, r'C:\Users\wcherlet\OneDrive - UGent\Documents\Lidar2MC')
+# sys.path.insert(1, r'C:\Users\wcherlet\OneDrive - UGent\Documents\Lidar2MC')
+sys.path.insert(1, r'C:\Users\cherl\Documents\Lidar2MC')
 
-from lidar2mc.world_io import flatten_region, PlotInfo
+from lidar2mc.layout import PlotInfo
 
 def main():
     parser = argparse.ArgumentParser()
@@ -30,15 +31,13 @@ def main():
 
     print(f"Creating new world_info file and reserving region 0,0 for world {worldname}.")
 
-    base_plot = PlotInfo("base_plot", 0, 0, 32, 32, "Base are from where to teleport to actual plots", "no type")
+    base_plot = PlotInfo("base_plot", -16, -16, 16, 16, "Center base", "/")
 
-    plots_dict = {0: base_plot.__dict__}
+    plots_list = [base_plot.__dict__]
 
-    reg = flatten_region(args.world, 0, 0)
-    reg.save(os.path.join(args.world, "region", "r.0.0.mca"))
+    world_base_name = os.path.basename(args.world)
 
-
-    dict = {"voxelsize": args.resolution, "plots": plots_dict}
+    dict = {"voxelsize": args.resolution, "m_world_name": world_base_name, "world_path": args.world, "plots": plots_list}
     with open( os.path.join(args.out_dir, f"{worldname}.json") , "w" ) as f:
         json.dump(dict, f)
 

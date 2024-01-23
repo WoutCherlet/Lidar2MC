@@ -1,4 +1,17 @@
+import os
+
 import open3d as o3d
+
+def read_point_cloud(path):
+
+    filename, file_extension = os.path.splitext(path)
+
+    if file_extension == ".txt":
+        return read_txt_file(path)
+    elif file_extension == ".ply":
+        return read_ply_file(path)
+    else:
+        raise Exception(f"File type {file_extension} not supported!")
 
 def read_txt_file(path):
     points = []

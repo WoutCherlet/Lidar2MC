@@ -146,6 +146,38 @@ def flatten_region(world_dir, x,z):
     return region
 
 
+def add_world_mc(layout_loc, voxelgrid):
+
+    # TODO: read appropriate region instead of empty region
+    cur_region = get_region(layout_loc, chunk=False)
+
+    # TODO: get all chunks to clear
+    
+
+    region = anvil.EmptyRegion(0, 0)
+
+    # TODO: wood and leaves based on forest type
+    wood = anvil.Block('minecraft','log')
+    leaves = anvil.Block('minecraft', 'leaves')
+
+
+            
+    # info: mapping of real world coordinates to mc: x -> x, y -> -z, z -> y
+    for voxel in voxelgrid.get_voxels():
+        idx = voxel.grid_index
+        if voxel.get_voxel_label() == 1:
+            block = wood
+        else:
+            block = leaves
+        # TODO: set location correctly: offset with layout_loc
+        region.set_block(block, idx[0], idx[2]-63, idx[1])
+
+    # Save to a file
+    file = world_info+f"\\region\\r.{region_x}.{region_z}.mca"
+
+    region.save(file)
+
+
 if __name__ == "__main__":
     # quick tests
     assert (get_chunk_within_region(-1,-1) == (31,31))

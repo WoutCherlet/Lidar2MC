@@ -1,13 +1,14 @@
-from functools import partial
 import json
 import os
+import math as m
+from functools import partial
 
 import tkinter as tk
 import tkinter.font as fnt
 from PIL import Image
 from PIL import ImageTk
 
-from world_io import get_region
+from lidar2mc.world_io import get_region
 
 class PlotInfo:
     def __init__(self, name, x, z, x_length, z_length, description, type):
@@ -33,7 +34,7 @@ class ChunkFrame:
         self.infolabel = infolabel
         self.gridsize = gridsize
         # holds data of other plots
-        self.data = {}
+        self.data = []
         # first index is z, second is x
         self.occupancy = [[0 for i in range(gridsize)] for j in range(gridsize)]
         self.buttons = [[0 for i in range(gridsize)] for j in range(gridsize)]
@@ -97,11 +98,10 @@ class ChunkFrame:
         new_plot_y_range = range(act_z, act_z + self.new_plot.z_length)
 
         for plot in self.data:
-            data = self.data[plot]
-            left_x = data["x"]
-            top_z = data["z"]
-            x_l = data["x_length"]
-            z_l = data["z_length"]
+            left_x = plot["x"]
+            top_z = plot["z"]
+            x_l = plot["x_length"]
+            z_l = plot["z_length"]
             x_range = range(left_x, left_x + x_l)
             z_range = range(top_z, top_z + z_l)
 
@@ -116,7 +116,7 @@ class ChunkFrame:
 
     def on_chunk_hover(self, e, i, j):
         if self.occupancy[i][j]:
-            info = self.data[str(self.occupancy[i][j]-1)]
+            info = self.data[self.occupancy[i][j]-1]
             reg_x, reg_z = get_region(j+self.cur_x,i+self.cur_z, chunk=True)
             info_txt = f"Region ({reg_x},{reg_z}), x={j+self.cur_x},z={i+self.cur_z}, plot located here: {info['name']}, of type {info['type']}.\n Description: {info['description']}"
             self.infolabel.config(text=info_txt, fg="black")
@@ -144,8 +144,8 @@ class ChunkFrame:
         else:
             selected_x_range = range(0)
             selected_z_range = range(0)
-        for z in range(i, min(i+new_plot.z_length, self.gridsize)):
-            for x in range(j, min(j+new_plot.x_length, self.gridsize)):
+        for z in range(i, min(i+self.new_plot.z_length, self.gridsize)):
+            for x in range(j, min(j+self.new_plot.x_length, self.gridsize)):
                 if self.occupancy[z][x]:
                     continue
                 elif x in selected_x_range and z in selected_z_range:
@@ -187,12 +187,11 @@ class ChunkFrame:
         self.occupancy = [[0 for i in range(self.gridsize)] for j in range(self.gridsize)]
         x_range_gr = range(self.cur_x, self.cur_x+self.gridsize)
         z_range_gr = range(self.cur_z, self.cur_z+self.gridsize)
-        for plot in self.data:
-            data = self.data[plot]
-            left_x = data["x"]
-            top_z = data["z"]
-            x_l = data["x_length"]
-            z_l = data["z_length"]
+        for idx,plot in enumerate(self.data):
+            left_x = plot["x"]
+            top_z = plot["z"]
+            x_l = plot["x_length"]
+            z_l = plot["z_length"]
             x_range = range(left_x, left_x + x_l)
             z_range = range(top_z, top_z + z_l)
 
@@ -204,7 +203,7 @@ class ChunkFrame:
             else:
                 for i in overlapz:
                     for j in overlapx:
-                        self.occupancy[i-self.cur_z][j-self.cur_x] = int(plot)+1
+                        self.occupancy[i-self.cur_z][j-self.cur_x] = idx+1
         return
     
     def redraw(self):
@@ -424,16 +423,44 @@ def selector_window(new_plot : PlotInfo, plots):
     return chunk_frame.cur_x + chunk_frame.selected_index_x, chunk_frame.cur_z + chunk_frame.selected_index_z
 
 
-def init_layout():
-    # TODO: this is entry point for layout selector:
+def layout_plot(world_info, vxlgrid):
 
-    # input : the voxelized pointcloud (or pc dimensions, whichever is most logical) + worldinfo file
-    # 1. construct plotInfo object
-    # 2. load json with world info
-    # 3. create selector_window with existing plots -> function
-    # 4. save new plot_info with description and write json
-    # 5. output: selected location
-    pass
+    PLOT_TYPES = ["deciduous", "tropical", "savannah"]
+
+    
+    dimensions = vxlgrid.get_dimensions()
+    x_val = dimensions[0]
+    z_val = dimensions[1]
+    x_chunks = m.ceil(x_val / 16)
+    z_chunks = m.ceil(z_val / 16)
+
+    # TODO: check if z size fits
+
+    # print("Enter name for new plot:")
+    # name = input()
+    # print("Enter description for new plot:")
+    # description = input()
+    # print(f"Choose type of plot (from {PLOT_TYPES}):")
+    # plot_type = input()
+    # while plot_type not in PLOT_TYPES:
+    #     print(f"Please choose type in {PLOT_TYPES}")
+    #     plot_type = input()
+    
+    # new_plot = PlotInfo(name=name, x=None, z=None, x_length=x_chunks, z_length = z_chunks, description=description, type=plot_type)
+    new_plot = PlotInfo(name=None, x=None, z=None, x_length=x_chunks, z_length = z_chunks, description=None, type=None)
+
+
+    location_x, location_z = selector_window(new_plot, world_info["plots"])
+
+
+    # save new plot in json
+
+    # new_plot.x = location_x
+    # new_plot.z = location_z
+
+    # world_info["plots"].append(new_plot)
+
+    return location_x, location_z
 
 
 

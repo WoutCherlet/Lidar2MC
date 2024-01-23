@@ -5,7 +5,7 @@ from collections import Counter
 from simple_3dviz import Mesh, Lines
 from simple_3dviz.window import show
 
-from pc_io import read_txt_file
+from lidar2mc.pc_io import read_txt_file
 
 
 class VoxelNode:
