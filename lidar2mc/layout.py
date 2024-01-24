@@ -8,7 +8,7 @@ import tkinter.font as fnt
 from PIL import Image
 from PIL import ImageTk
 
-from lidar2mc.world_io import get_region
+from lidar2mc.world_io import get_region_xz
 
 class PlotInfo:
     def __init__(self, name, x, z, x_length, z_length, description, type):
@@ -117,11 +117,11 @@ class ChunkFrame:
     def on_chunk_hover(self, e, i, j):
         if self.occupancy[i][j]:
             info = self.data[self.occupancy[i][j]-1]
-            reg_x, reg_z = get_region(j+self.cur_x,i+self.cur_z, chunk=True)
+            reg_x, reg_z = get_region_xz(j+self.cur_x,i+self.cur_z, chunk=True)
             info_txt = f"Region ({reg_x},{reg_z}), x={j+self.cur_x},z={i+self.cur_z}, plot located here: {info['name']}, of type {info['type']}.\n Description: {info['description']}"
             self.infolabel.config(text=info_txt, fg="black")
         else:
-            reg_x, reg_z = get_region(j+self.cur_x,i+self.cur_z, chunk=True)
+            reg_x, reg_z = get_region_xz(j+self.cur_x,i+self.cur_z, chunk=True)
             self.infolabel.config(text=f"Region ({reg_x},{reg_z}), x={j+self.cur_x},z={i+self.cur_z} \n ", fg="black")
         
         # show plot location on hover
@@ -228,7 +228,7 @@ class ChunkFrame:
         z_checks = range(self.cur_z, self.cur_z+self.gridsize, min(self.gridsize-1, 32))
         for x in x_checks:
             for z in z_checks:
-                reg = get_region(x, z, chunk=True)
+                reg = get_region_xz(x, z, chunk=True)
                 if reg not in self.regions:
                     self.regions.append(reg)
 
@@ -462,7 +462,7 @@ def layout_plot(world_info, vxlgrid):
 
     return location_x, location_z
 
-
+# TODO: fix bug: can't select chunk with x=0 or z=0
 
 if __name__ == "__main__":
     new_plot = PlotInfo(name="newplottest", x=None, z=None, x_length=5, z_length=8,description="test of new plot", type="type of new plot")
