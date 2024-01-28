@@ -112,8 +112,6 @@ def get_chunk_xz_absolute(x,z):
 
 def add_world_mc(world_path, layout_loc, voxelgrid):
 
-    # TODO: read appropriate region instead of empty region
-
     # TODO: fix this so it works for plots spanning borders of regions
     region_x, region_z = get_region_xz(*layout_loc, chunk=True)
 
@@ -139,17 +137,20 @@ def add_world_mc(world_path, layout_loc, voxelgrid):
     print("Adding voxelgrid")
 
     # TODO: wood and leaves based on forest type
-    # wood = anvil.Block('minecraft','log')
-    # leaves = anvil.Block('minecraft', 'leaves')
+    wood = anvil.Block('minecraft','oak_log')
+    leaves = anvil.Block('minecraft', 'oak_leaves')
 
-    # # info: mapping of real world coordinates to mc: x -> x, y -> -z, z -> y
-    # for voxel in voxelgrid.get_voxels():
-    #     idx = voxel.grid_index
-    #     if voxel.get_voxel_label() == 1:
-    #         block = wood
-    #     else:
-    #         block = leaves
-    #     region.set_block(block, layout_loc[0]+idx[0], idx[2]-63, layout_loc[1]+idx[1])
+
+    # info: mapping of real world coordinates to mc: x -> x, y -> -z, z -> y
+    Y_OFFSET = 100
+    for voxel in voxelgrid.get_voxels():
+        idx = voxel.grid_index
+        if voxel.get_voxel_label() == 1:
+            block = wood
+        else:
+            block = leaves
+        # print(f"Setting block x:{layout_loc[0]*16+idx[0]}, y: { idx[2]+Y_OFFSET}, z: {layout_loc[1]*16+idx[1]}")
+        region.set_block(block, layout_loc[0]*16+idx[0], idx[2]+Y_OFFSET, layout_loc[1]*16+idx[1])
 
     print("saving world file")
 

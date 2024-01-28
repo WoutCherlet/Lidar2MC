@@ -252,7 +252,7 @@ def quit_with_selection_check(window, chunk_frame, infolabel):
         infolabel.config(text="Please make a selection first. \n", fg="red")
         return
     else:
-        window.quit()
+        window.destroy()
 
 def create_move_buttons(window, chunk_frame):
     # get containers and place around chunk frame
